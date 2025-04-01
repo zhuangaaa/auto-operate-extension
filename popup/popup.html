@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="popup.css">
+</head>
+
+<body>
+  <div class="container">
+    <div class="section">
+      <div class="section-item">
+        <label>最大重试计数：</label>
+        <input id="maxRetry" type="number" min="0"></input>
+        <div style="display: flex;justify-content: space-between;">
+          <small>设置运行的重试次数</small>
+        </div>
+      </div>
+      <div class="section-item">
+        <label>设置定时执行挑入时间：</label>
+        <input type="datetime-local" step="1" id="scheduleTime">
+        <small>设置时间后，点击定时执行</small>
+      </div>
+      <div class="section-item">
+        <label>优质行业筛选：</label>
+        <textarea id="industries" placeholder="过滤深圳地区的数据"></textarea>
+        <div style="display: flex;justify-content: space-between;">
+          <small>每行一个行业关键词,最少一个,需保存配置之后才能生效</small>
+          <a id="saveBtn">保存配置</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <button id="startBtn">▶ 开始执行</button>
+      <button id="stopBtn">⏹ 停止</button>
+      <button id="scheduleBtn">⏰ 定时执行</button>
+    </div>
+    <!-- 在 log-container 上方添加 -->
+    <div id="licenseStatus" style="color: red; padding: 5px 0; display: none;">
+      插件已过期，功能不可用
+    </div>
+    <!-- 在 container 内添加日志容器 -->
+    <div class="log-container" id="logContainer">
+      <div id="status">状态：待机</div>
+      <div class="log-header">
+        <h3>操作日志</h3>
+        <button id="clearLogs">清空日志</button>
+      </div>
+      <div class="log-list" id="logList"></div>
+    </div>
+  </div>
+  <div style="position: absolute; left: -9999px">
+      <%= htmlWebpackPlugin.options.inject ? '' : '<script src="popup.js"></script>' %>
+  </div>
+</body>
+
+</html>

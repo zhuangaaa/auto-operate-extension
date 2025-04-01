@@ -1,0 +1,92 @@
+.container {
+  width: 400px;
+  padding: 10px;
+  font-family: Arial, sans-serif;
+}
+
+.section {
+  margin: 10px 0;
+}
+
+.section .section-item {
+  margin-bottom: 10px;
+}
+
+.section small {
+  color: #777;
+}
+
+input {
+  width: 99%;
+  height: 30px;
+  margin: 5px  0;
+  padding: 0 5px;
+}
+
+textarea {
+  width: 100%;
+  margin: 5px 0;
+  padding: 5px;
+  min-height: 73px;  /* 最小高度 */
+  max-height: 195px;  /* 最大高度 */
+  resize: vertical;   /* 只允许垂直调整 */
+  overflow-y: auto;   /* 内容超出时显示滚动条 */
+}
+
+button {
+  padding: 5px 10px;
+  margin: 0 5px;
+  cursor: pointer;
+}
+
+.log-container {
+  margin-top: 15px;
+  border-top: 1px solid #eee;
+  padding-top: 10px;
+}
+
+.log-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.log-list {
+  height: 100px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  padding: 5px;
+  background: #f9f9f9;
+}
+
+.log-item {
+  padding: 3px 5px;
+  margin: 2px 0;
+  font-size: 0.9em;
+  display: flex;
+  justify-content: space-between;
+}
+
+.log-item.error {
+  color: #dc3545;
+  background: #ffe6e6;
+}
+
+.timestamp {
+  color: #666;
+  margin-right: 10px;
+}
+
+#saveBtn {
+  color: #409eff;
+  border: none;
+  cursor: pointer;
+}
+
+#log {
+  max-height: 200px;
+  overflow-y: auto;
+  margin-top: 10px;
+  font-size: 0.9em;
+}

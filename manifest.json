@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "自动操作控制台",
+  "version": "1.0",
+  "permissions": ["activeTab", "scripting", "storage", "tabs", "alarms"],
+  "action": {
+    "default_popup": "popup/popup.html"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"  // 如果使用ES6模块需要添加
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://qianji.alibaba-inc.com/*"],
+      "js": ["content.js"]
+    }
+  ]
+}
