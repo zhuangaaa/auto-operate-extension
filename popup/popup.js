@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-  const expirationDate = new Date('2025-04-02')
+  const expirationDate = new Date('2025-05-02')
 
   const premiumCategories = [
     '药业',

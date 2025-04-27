@@ -1,14 +1,14 @@
 if (!window.AutoOperator) {
-  const EXPIRATION_DATE = new Date('2025-04-02').getTime() // 设置过期时间
-   window.AutoOperator = class AutoOperator {
+  const EXPIRATION_DATE = new Date('2025-05-02').getTime() // 设置过期时间
+  window.AutoOperator = class AutoOperator {
     constructor() {
       this.isRunning = false // 运行状态
       this.currentPage = 1 // 当前页面
       this.retryCount = 0 // 重试计数
       this.maxRetry = 0 // 最大重试次数，设置为0不重试，只执行一次
       this.operationWaitingTime = 700 // 挑入或则收藏操作等待时间(ms)
-      this.dataLoadingWaitingTime = 1200 // 翻页数据加载等待时间(ms)
-      this.frameWaitingTime = 500 // 弹框等待时间(ms)
+      this.dataLoadingWaitingTime = 600 // 翻页数据加载等待时间(ms)
+      this.frameWaitingTime = 550 // 弹框等待时间(ms)
       this.excludedArea = '深圳' // 排除的区域
       this.scheduledTimer = null // 新增定时器标识
       this.currentWaitPromise = null // 新增异步操作标识
@@ -56,6 +56,7 @@ if (!window.AutoOperator) {
         if (!this.isRunning) return
         // 获取符合条件的行
         const rows = this.getQualifiedRows()
+        console.log('rows',rows);
         for (const row of rows) {
           if (!this.isRunning) {
             this.log('操作已中止');
@@ -68,7 +69,7 @@ if (!window.AutoOperator) {
           // 如果还有下一页且下一页的按钮不是被禁用且仍在运行
           this.currentPage++
           document.querySelector('.ant-pagination-next').click() // 点击下一页按钮
-          await this.waitFor(this.dataLoadingWaitingTime) // 等待翻页数据加载完成
+          await this.waitFor(this.dataLoadingWaitingTime + 1000) // 等待翻页数据加载完成
           await this.processPage() // 继续处理下一页
         } else {
           await this.retryOrStop() // 重试或则停止
@@ -109,7 +110,7 @@ if (!window.AutoOperator) {
     // 处理挑入或则收藏操作
     async handleOperation (button, type) {
       button.click()
-      await this.waitFor(this.frameWaitingTime) // 等待400ms之后模态框出现
+      await this.waitFor(this.frameWaitingTime) // 等待模态框出现
       const modal = await this.waitForElement('.ant-modal', type, 2000); // 缩短超时时间
       if (!modal) return;
       const confirmBtn = await modal[0].querySelector('.ant-btn-primary')
@@ -121,7 +122,7 @@ if (!window.AutoOperator) {
 
     // 处理操作结果
     async handleResult (type) {
-      await this.waitFor(this.frameWaitingTime) // 等待600ms之后模态框消失
+      await this.waitFor(this.frameWaitingTime) // 等待模态框消失
 
       // 需要增加对挑入失败与收藏失败的处理
       const errorMsg = document.querySelector('.ant-modal-confirm-warning') // 获取挑入或则收藏失败的模态框
@@ -139,20 +140,19 @@ if (!window.AutoOperator) {
     }
 
     getQualifiedRows () {
-      // 获取所有行
-      const rows = document.querySelectorAll('.ag-row')
-      // 过滤符合条件的行
-      const agRow = Array.from(rows).filter(row => {
-        const companyCell = row.querySelector('[col-id="companynameprecise"]') // 获取公司名信息
-        if (!companyCell || !companyCell.textContent) return false
-        const companyName = companyCell.textContent.trim() || ''
-        // 过滤掉包含排除深圳区域的公司名
-        return this.industries.some(
-          industry =>
-            companyName.includes(industry) &&
-            !companyName.includes(this.excludedArea)
-        )
-      })
+      const rows = document.querySelectorAll('.ag-row:has([col-id="companynameprecise"])')
+      const excludePattern = new RegExp(this.excludedArea)
+      const industryPattern = new RegExp(this.industries.join('|'))
+
+      const agRow = []
+      for (const row of rows) {
+        const companyCell = row.querySelector('[col-id="companynameprecise"]')
+        const companyName = companyCell?.textContent?.trim() || ''
+
+        if (industryPattern.test(companyName) && !excludePattern.test(companyName)) {
+          agRow.push(row)
+        }
+      }
       return agRow
     }
 
@@ -213,10 +213,7 @@ if (!window.AutoOperator) {
         this.retryCount++
         this.currentPage = 1
         // 模拟翻页事件回到第一页且刷新列表数据
-        const total = document
-          .querySelector('.ant-pagination-total-text')
-          .innerText.slice(1, -1)
-        if (total != 0) {
+        if (document.querySelector('.ant-pagination-item-1:not(.ant-pagination-item-active)')) { // 如果有数据且当前页不是第一页，模拟点击第一页
           document.querySelector('.ant-pagination-item-1').click()
           document
             .querySelector(
@@ -224,7 +221,7 @@ if (!window.AutoOperator) {
             )
             .click()
           this.updateStatus('第' + this.retryCount + '次重试')
-          await this.waitFor(this.dataLoadingWaitingTime + 500) // 这个是翻页有数据的情况，可以加点额外的时间去加载数据
+          await this.waitFor(this.dataLoadingWaitingTime + 1000) // 这个是翻页有数据的情况，可以加点额外的时间去加载数据
         } else {
           // 如果没有数据，模拟点击成熟度获取最新数据
           document
@@ -243,6 +240,18 @@ if (!window.AutoOperator) {
       } else {
         this.stop()
       }
+    }
+    // 新增加载层等待方法
+    async waitForLoadingOverlay () {
+      const start = Date.now()
+      while (Date.now() - start < this.dataLoadingWaitingTime + 2000) {
+        const loadingElement = document.querySelector('.ag-overlay-loading-center')
+        if (!loadingElement) {
+          return
+        }
+        await this.waitFor(100)
+      }
+      throw new Error('页面加载超时')
     }
 
     log (text) {
