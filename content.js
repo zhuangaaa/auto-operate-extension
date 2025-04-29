@@ -6,10 +6,9 @@ if (!window.AutoOperator) {
       this.currentPage = 1 // 当前页面
       this.retryCount = 0 // 重试计数
       this.maxRetry = 0 // 最大重试次数，设置为0不重试，只执行一次
-      this.operationWaitingTime = 700 // 挑入或则收藏操作等待时间(ms)
+      this.operationWaitingTime = 500 // 挑入或则收藏操作等待时间(ms)
       this.dataLoadingWaitingTime = 600 // 翻页数据加载等待时间(ms)
-      this.frameWaitingTime = 550 // 弹框等待时间(ms)
-      this.excludedArea = '深圳' // 排除的区域
+      this.excludedArea = ['佛山'] // 排除的区域
       this.scheduledTimer = null // 新增定时器标识
       this.currentWaitPromise = null // 新增异步操作标识
       this.pageId = Math.random().toString(36).substr(2, 9); // 生成随机页面ID
@@ -56,7 +55,7 @@ if (!window.AutoOperator) {
         if (!this.isRunning) return
         // 获取符合条件的行
         const rows = this.getQualifiedRows()
-        console.log('rows',rows);
+        console.log('rows', rows);
         for (const row of rows) {
           if (!this.isRunning) {
             this.log('操作已中止');
@@ -110,26 +109,46 @@ if (!window.AutoOperator) {
     // 处理挑入或则收藏操作
     async handleOperation (button, type) {
       button.click()
-      await this.waitFor(this.frameWaitingTime) // 等待模态框出现
-      const modal = await this.waitForElement('.ant-modal', type, 2000); // 缩短超时时间
+      const modal = await this.waitForElement('.ant-modal', type, 600); // 缩短超时时间
       if (!modal) return;
       const confirmBtn = await modal[0].querySelector('.ant-btn-primary')
       if (confirmBtn) {
         confirmBtn.click()
-        await this.handleResult(type)
+        // 添加网络请求监听
+        const requestPromise = new Promise((resolve, reject) => {
+          const observer = new PerformanceObserver((list) => {
+            const entries = list.getEntries().filter(entry =>
+              entry.initiatorType === 'xmlhttprequest' &&
+              entry.name.includes('/rpc/work/getDiorData') // 根据实际接口路径修改
+            );
+            if (entries.length > 0) {
+              observer.disconnect();
+              resolve();
+            }
+          });
+          observer.observe({ entryTypes: ['resource'] });
+        });
+        requestPromise.finally(() => {
+          this.handleResult(type)
+        })
       }
     }
 
     // 处理操作结果
     async handleResult (type) {
-      await this.waitFor(this.frameWaitingTime) // 等待模态框消失
-
-      // 需要增加对挑入失败与收藏失败的处理
-      const errorMsg = document.querySelector('.ant-modal-confirm-warning') // 获取挑入或则收藏失败的模态框
-      if (errorMsg) {
-        errorMsg.querySelector('.ant-btn').click()
+      const errorModal = document.querySelector('.ant-modal-confirm-warning');
+      if (errorModal) {
+        errorModal.querySelector('.ant-btn').click();
+           // 新增弹窗关闭等待
+           const startTime = Date.now();
+           while (Date.now() - startTime < 2000) { // 最多等待2秒
+             if (!document.querySelector('.ant-modal-confirm-warning')) {
+               break; // 弹窗已消失
+             }
+             await this.waitFor(100); // 每100ms检查一次
+           }
         this.log(`${type}失败：资源已被占用`)
-        return
+        return;
       }
 
       const successMsg = document.querySelector('.ant-message-success')
@@ -141,9 +160,8 @@ if (!window.AutoOperator) {
 
     getQualifiedRows () {
       const rows = document.querySelectorAll('.ag-row:has([col-id="companynameprecise"])')
-      const excludePattern = new RegExp(this.excludedArea)
+      const excludePattern = new RegExp(this.excludedArea.join('|')) // 使用数组生成正则
       const industryPattern = new RegExp(this.industries.join('|'))
-
       const agRow = []
       for (const row of rows) {
         const companyCell = row.querySelector('[col-id="companynameprecise"]')
@@ -240,18 +258,6 @@ if (!window.AutoOperator) {
       } else {
         this.stop()
       }
-    }
-    // 新增加载层等待方法
-    async waitForLoadingOverlay () {
-      const start = Date.now()
-      while (Date.now() - start < this.dataLoadingWaitingTime + 2000) {
-        const loadingElement = document.querySelector('.ag-overlay-loading-center')
-        if (!loadingElement) {
-          return
-        }
-        await this.waitFor(100)
-      }
-      throw new Error('页面加载超时')
     }
 
     log (text) {
