@@ -7,7 +7,7 @@ if (!window.AutoOperator) {
       this.retryCount = 0 // 重试计数
       this.maxRetry = 0 // 最大重试次数，设置为0不重试，只执行一次
       this.operationWaitingTime = 700 // 挑入或则收藏操作等待时间(ms)
-      this.dataLoadingWaitingTime = 700 // 翻页数据加载等待时间(ms)
+      this.dataLoadingWaitingTime = 600 // 翻页数据加载等待时间(ms)
       this.frameWaitingTime = 550 // 弹框等待时间(ms)
       this.excludedArea = '深圳' // 排除的区域
       this.scheduledTimer = null // 新增定时器标识
